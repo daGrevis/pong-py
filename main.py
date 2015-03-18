@@ -1,5 +1,5 @@
 from browser import window
-from browser.timer import set_interval
+from browser import timer
 
 
 FPS = 60
@@ -10,18 +10,15 @@ jq = window.jQuery
 
 class Game(object):
 
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-
-        self.direction = (4, 2)
+    def __init__(self, window_width, window_height):
+        self.direction = (2, 1)
 
         self.paddle1 = Paddle(id=1)
         self.paddle2 = Paddle(id=2)
         self.ball = Ball()
 
-        self.width -= self.ball.width + self.paddle1.width + self.paddle2.width
-        self.height -= self.ball.height
+        self.width = window_width - self.ball.width * 3
+        self.height = window_height - self.ball.height
 
         self._things = {
             "paddle1": self.paddle1,
@@ -50,7 +47,12 @@ class Game(object):
         self.ball.y += y
 
     def render(self):
-        jq("body").css({'margin': self.ball.width})
+        jq("body").css({
+            'margin-left':   self.ball.width * 3 / 2,
+            'margin-right':  self.ball.width * 3 / 2,
+            'margin-top':    self.ball.height / 2,
+            'margin-bottom': self.ball.height / 2,
+         })
         for thing in self._things.values():
             thing.render()
 
@@ -64,6 +66,7 @@ class Paddle(object):
         self.height = height
         self.y = y
         self.id = id
+        self.side = "left" if self.id == 1 else 'right'
 
     def _get_selector(self):
         return "#paddle{}".format(self.id)
@@ -71,6 +74,7 @@ class Paddle(object):
     def render(self):
         jq(self._get_selector()).css({
             "top": self.y,
+            self.side: -(3 * self.width / 2),
             "width": self.width,
             "height": self.height,
         })
@@ -104,8 +108,6 @@ def main():
     height = jq_window.height()
 
     game = Game(width, height)
-    set_interval(lambda: step(game), 1000 / float(FPS))
+    timer.set_interval(lambda: step(game), 1000 / float(FPS))
 
-
-if __name__ == "__main__":
-    main()
+main()
