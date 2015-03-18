@@ -43,9 +43,9 @@ class Game(object):
         }
 
         for paddle, (kc_up, kc_down) in paddles_to_keycodes.items():
-            if kc == kc_up and paddle.canMoveTop():
+            if kc == kc_up:
                 paddle.moveTop()
-            elif kc == kc_down and paddle.canMoveBottom():
+            elif kc == kc_down:
                 paddle.moveBottom()
 
     def _init_events(self):
@@ -107,15 +107,14 @@ class Paddle(object):
 
     def moveTop(self):
         self.y -= PADDLE_MOVESPEED
+        self.y = max(self.y, 0 - self.game.ball.height / 2)
 
     def moveBottom(self):
         self.y += PADDLE_MOVESPEED
-
-    def canMoveTop(self):
-        return self.y + PADDLE_MOVESPEED > 0
-
-    def canMoveBottom(self):
-        return self.y + self.height < self.game.height
+        self.y = min(
+            self.y, self.game.height -
+            self.height + self.game.ball.height / 2
+        )
 
 
 class Ball(object):
