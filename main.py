@@ -2,19 +2,25 @@ from browser import window
 from browser import timer
 
 
-FPS = 60
-
 debug = window.console.log
 jq = window.jQuery
+
+FPS = 60
+PADDLE_MOVESPEED = 40
+
+KEYCODE_W = 87
+KEYCODE_S = 83
+KEYCODE_UP = 38
+KEYCODE_DOWN = 40
 
 
 class Game(object):
 
     def __init__(self, window_width, window_height):
-        self.direction = (2, 1)
+        self.direction = (8, 4)
 
-        self.paddle1 = Paddle(id=1)
-        self.paddle2 = Paddle(id=2)
+        self.paddle1 = Paddle(self, id=1)
+        self.paddle2 = Paddle(self, id=2)
         self.ball = Ball()
 
         self.width = window_width - self.ball.width * 3
@@ -25,6 +31,25 @@ class Game(object):
             "paddle2": self.paddle2,
             "ball": self.ball,
         }
+
+        self._init_events()
+
+    def _onKeyDown(self, event):
+        kc = event.keyCode
+
+        paddles_to_keycodes = {
+            self.paddle1: (KEYCODE_W, KEYCODE_S, ),
+            self.paddle2: (KEYCODE_UP, KEYCODE_DOWN, ),
+        }
+
+        for paddle, (kc_up, kc_down) in paddles_to_keycodes.items():
+            if kc == kc_up and paddle.canMoveTop():
+                paddle.moveTop()
+            elif kc == kc_down and paddle.canMoveBottom():
+                paddle.moveBottom()
+
+    def _init_events(self):
+        jq(window).keydown(self._onKeyDown)
 
     def _collides_x(self):
         x = self.ball.x
@@ -59,9 +84,10 @@ class Game(object):
 
 class Paddle(object):
 
-    def __init__(self, width=32, height=160, y=0, id=None):
+    def __init__(self, game, width=32, height=160, y=0, id=None):
         assert id is not None
 
+        self.game = game
         self.width = width
         self.height = height
         self.y = y
@@ -78,6 +104,18 @@ class Paddle(object):
             "width": self.width,
             "height": self.height,
         })
+
+    def moveTop(self):
+        self.y -= PADDLE_MOVESPEED
+
+    def moveBottom(self):
+        self.y += PADDLE_MOVESPEED
+
+    def canMoveTop(self):
+        return self.y + PADDLE_MOVESPEED > 0
+
+    def canMoveBottom(self):
+        return self.y + self.height < self.game.height
 
 
 class Ball(object):
