@@ -2,7 +2,9 @@ from browser import window
 from browser import timer
 
 
-debug = window.console.log
+def log(*xs):
+    return window.console.log(*map(str, xs))
+
 jq = window.jQuery
 
 FPS = 60
@@ -17,6 +19,7 @@ KEYCODE_DOWN = 40
 class Game(object):
 
     def __init__(self, window_width, window_height):
+        self.dead = False
         self.direction = (8, 4)
 
         self.paddle1 = Paddle(self, id=1)
@@ -59,11 +62,21 @@ class Game(object):
         y = self.ball.y
         return y < 0 or y > self.height
 
-    def step(self):
-        if self._collides_x():
-            self.direction[0] *= -1
+    def _get_closest_paddle(self, x):
+        if x > self.width / 2:
+            return self.paddle2
+        else:
+            return self.paddle1
 
-        if self._collides_y():
+    def step(self):
+        if not self.dead and self._collides_x():
+            paddle = self._get_closest_paddle(self.ball.x)
+            if paddle.collides(self.ball):
+                self.direction[0] *= -1
+            else:
+                self.dead = True
+
+        if not self.dead and self._collides_y():
             self.direction[1] *= -1
 
         x, y = self.direction
@@ -83,6 +96,9 @@ class Game(object):
 
 
 class Paddle(object):
+
+    def __str__(self):
+        return "<Paddle: {}>".format(self.id)
 
     def __init__(self, game, width=32, height=160, y=0, id=None):
         assert id is not None
@@ -115,6 +131,9 @@ class Paddle(object):
             self.y, self.game.height -
             self.height + self.game.ball.height / 2
         )
+
+    def collides(self, ball):
+        return abs(ball.y - (self.y + self.height / 2)) < self.height / 2
 
 
 class Ball(object):
