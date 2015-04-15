@@ -16,6 +16,15 @@ KEYCODE_UP = 38
 KEYCODE_DOWN = 40
 
 
+class DomNode(object):
+
+    def get_dom_node(self):
+        raise NotImplementedError()
+
+    def remove(self):
+        self.get_dom_node().remove()
+
+
 class Game(object):
 
     def __init__(self, window_width, window_height):
@@ -105,7 +114,8 @@ class Game(object):
 
         jq("title").text("Pong ({}:{})".format(*self.score))
 
-class Paddle(object):
+
+class Paddle(DomNode):
 
     def __str__(self):
         return "<Paddle: {}>".format(self.id)
@@ -120,11 +130,11 @@ class Paddle(object):
         self.id = id
         self.side = "left" if self.id == 1 else 'right'
 
-    def _get_selector(self):
-        return "#paddle{}".format(self.id)
+    def get_dom_node(self):
+        return jq("#paddle{}".format(self.id))
 
     def render(self):
-        jq(self._get_selector()).css({
+        self.get_dom_node().css({
             "top": self.y,
             self.side: -(3 * self.width / 2),
             "width": self.width,
@@ -146,7 +156,7 @@ class Paddle(object):
         return abs(ball.y - (self.y + self.height / 2)) < self.height / 2
 
 
-class Ball(object):
+class Ball(DomNode):
 
     def __init__(self, width=32, height=32, x=0, y=0):
         self.width = width
@@ -154,8 +164,11 @@ class Ball(object):
         self.x = x
         self.y = y
 
+    def get_dom_node(self):
+        return jq("#ball")
+
     def render(self):
-        jq("#ball").css({
+        self.get_dom_node().css({
             "width": self.width,
             "height": self.height,
             "left": self.x - (self.width / 2),
