@@ -20,6 +20,8 @@ class Game(object):
 
     def __init__(self, window_width, window_height):
         self.dead = False
+        self.score = (0, 0)
+
         self.direction = (8, 4)
 
         self.paddle1 = Paddle(self, id=1)
@@ -68,13 +70,20 @@ class Game(object):
         else:
             return self.paddle1
 
+    def die(self, loser_paddle):
+        self.dead = True
+
+        loser_id = loser_paddle.id - 1
+        winner_id = loser_id ^ 1
+        self.score[winner_id] += 1
+
     def step(self):
         if not self.dead and self._collides_x():
             paddle = self._get_closest_paddle(self.ball.x)
             if paddle.collides(self.ball):
                 self.direction[0] *= -1
             else:
-                self.dead = True
+                self.die(paddle)
 
         if not self.dead and self._collides_y():
             self.direction[1] *= -1
@@ -94,6 +103,7 @@ class Game(object):
         for thing in self._things.values():
             thing.render()
 
+        jq("title").text("Pong ({}:{})".format(*self.score))
 
 class Paddle(object):
 
