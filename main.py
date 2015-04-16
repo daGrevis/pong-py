@@ -35,18 +35,28 @@ class Game(object):
 
         self.paddle1 = Paddle(self, id=1)
         self.paddle2 = Paddle(self, id=2)
-        self.ball = Ball()
-
-        self.width = window_width - self.ball.width * 3
-        self.height = window_height - self.ball.height
 
         self._things = {
             "paddle1": self.paddle1,
             "paddle2": self.paddle2,
-            "ball": self.ball,
         }
 
+        self.ball_width = 32
+        self.ball_height = 32
+
+        self.width = window_width - self.ball_width * 3
+        self.height = window_height - self.ball_height
+
+        self._throw_ball()
+
         self._init_events()
+
+    def _throw_ball(self):
+        self.ball = Ball(
+            self.width / 2, self.height / 2,
+            self.ball_width, self.ball_height,
+        )
+        self._things["ball"] = self.ball
 
     def _onKeyDown(self, event):
         kc = event.keyCode
@@ -79,12 +89,12 @@ class Game(object):
         else:
             return self.paddle1
 
-    def die(self, loser_paddle):
-        self.dead = True
-
+    def _die(self, loser_paddle):
         loser_id = loser_paddle.id - 1
         winner_id = loser_id ^ 1
         self.score[winner_id] += 1
+
+        self._throw_ball()
 
     def step(self):
         if not self.dead and self._collides_x():
@@ -92,7 +102,7 @@ class Game(object):
             if paddle.collides(self.ball):
                 self.direction[0] *= -1
             else:
-                self.die(paddle)
+                self._die(paddle)
 
         if not self.dead and self._collides_y():
             self.direction[1] *= -1
@@ -158,11 +168,11 @@ class Paddle(DomNode):
 
 class Ball(DomNode):
 
-    def __init__(self, width=32, height=32, x=0, y=0):
-        self.width = width
-        self.height = height
+    def __init__(self, x=0, y=0, width=32, height=32):
         self.x = x
         self.y = y
+        self.width = width
+        self.height = height
 
     def get_dom_node(self):
         return jq("#ball")
