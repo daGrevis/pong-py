@@ -1,5 +1,5 @@
-from browser import window
 from browser import timer
+from browser import window
 
 
 def log(*xs):
@@ -16,25 +16,18 @@ KEYCODE_UP = 38
 KEYCODE_DOWN = 40
 
 
-class DomNode(object):
-
-    def get_dom_node(self):
-        raise NotImplementedError()
-
-    def remove(self):
-        self.get_dom_node().remove()
-
-
 class Game(object):
 
     def __init__(self, window_width, window_height):
         self.dead = False
         self.score = (0, 0)
 
-        self.direction = (8, 4)
+        self.direction = (4, 6)
 
-        self.paddle1 = Paddle(self, id=1)
-        self.paddle2 = Paddle(self, id=2)
+        self.canvasContext = self._create_canvas()
+
+        self.paddle1 = Paddle(self.canvasContext, self, id=1)
+        self.paddle2 = Paddle(self.canvasContext, self, id=2)
 
         self._things = {
             "paddle1": self.paddle1,
@@ -53,6 +46,7 @@ class Game(object):
 
     def _throw_ball(self):
         self.ball = Ball(
+            self.canvasContext,
             self.width / 2, self.height / 2,
             self.ball_width, self.ball_height,
         )
@@ -112,27 +106,28 @@ class Game(object):
         self.ball.x += x
         self.ball.y += y
 
+    def _create_canvas(self):
+        return window.document.getElementById("canvas").getContext("2d")
+
     def render(self):
-        jq("body").css({
-            'margin-left':   self.ball.width * 3 / 2,
-            'margin-right':  self.ball.width * 3 / 2,
-            'margin-top':    self.ball.height / 2,
-            'margin-bottom': self.ball.height / 2,
-         })
+        self.canvasContext.canvas.width = window.innerWidth
+        self.canvasContext.canvas.height = window.innerHeight
+
         for thing in self._things.values():
             thing.render()
 
         jq("title").text("Pong ({}:{})".format(*self.score))
 
 
-class Paddle(DomNode):
+class Paddle(object):
 
     def __str__(self):
         return "<Paddle: {}>".format(self.id)
 
-    def __init__(self, game, width=32, height=160, y=0, id=None):
+    def __init__(self, canvasContext, game, width=32, height=160, y=0, id=None):
         assert id is not None
 
+        self.canvasContext = canvasContext
         self.game = game
         self.width = width
         self.height = height
@@ -140,16 +135,13 @@ class Paddle(DomNode):
         self.id = id
         self.side = "left" if self.id == 1 else 'right'
 
-    def get_dom_node(self):
-        return jq("#paddle{}".format(self.id))
-
     def render(self):
-        self.get_dom_node().css({
-            "top": self.y,
-            self.side: -(3 * self.width / 2),
-            "width": self.width,
-            "height": self.height,
-        })
+        self.canvasContext.fillStyle = "pink"
+        if self.side == "right":
+            x = self.game.width + (self.width * 2)
+        else:
+            x = 0
+        self.canvasContext.fillRect(x, self.y, self.width, self.height)
 
     def moveTop(self):
         self.y -= PADDLE_MOVESPEED
@@ -166,25 +158,18 @@ class Paddle(DomNode):
         return abs(ball.y - (self.y + self.height / 2)) < self.height / 2
 
 
-class Ball(DomNode):
+class Ball(object):
 
-    def __init__(self, x=0, y=0, width=32, height=32):
+    def __init__(self, canvasContext, x=0, y=0, width=32, height=32):
+        self.canvasContext = canvasContext
         self.x = x
         self.y = y
         self.width = width
         self.height = height
 
-    def get_dom_node(self):
-        return jq("#ball")
-
     def render(self):
-        self.get_dom_node().css({
-            "width": self.width,
-            "height": self.height,
-            "left": self.x - (self.width / 2),
-            "top": self.y - (self.height / 2),
-        })
-
+        self.canvasContext.fillStyle = "blue"
+        self.canvasContext.fillRect(self.x, self.y, self.width, self.height)
 
 def step(game):
     game.step()
